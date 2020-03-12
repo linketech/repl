@@ -1,4 +1,4 @@
-/* eslint-disable max-classes-per-file, no-underscore-dangle, import/no-unresolved */
+/* eslint-disable max-classes-per-file, no-underscore-dangle */
 const fs = require('fs')
 const repl = require('repl')
 const crypto = require('crypto')
@@ -6,7 +6,6 @@ const { promisify } = require('util')
 const { Readable, Writable } = require('stream')
 
 const _ = require('lodash')
-const moment = require('moment')
 const Koa = require('koa')
 const Router = require('koa-router')
 const koaBody = require('koa-body')
@@ -102,7 +101,7 @@ router.get('/:hash', async (ctx) => {
 	const { hash } = ctx.params
 	const theRepl = Repl.getInstance(hash)
 	console.log('get instance', hash)
-	ctx.body = indexHtml({ logs: theRepl.getLogs(), moment })
+	ctx.body = indexHtml({ logs: theRepl.getLogs() })
 })
 
 async function deleteRepl(ctx) {
@@ -111,7 +110,7 @@ async function deleteRepl(ctx) {
 	await theRepl.input('.exit')
 	console.log('delete instance', hash)
 	theRepl.clearLogs()
-	ctx.body = indexHtml({ logs: theRepl.getLogs(), moment })
+	ctx.body = indexHtml({ logs: theRepl.getLogs() })
 	Repl.deleteInstance(hash)
 }
 
@@ -129,7 +128,7 @@ router.post('/:hash', async (ctx) => {
 	} else if (script) {
 		await theRepl.input(script)
 	}
-	ctx.body = indexHtml({ logs: theRepl.getLogs(), moment })
+	ctx.body = indexHtml({ logs: theRepl.getLogs() })
 })
 
 
