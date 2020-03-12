@@ -43,7 +43,7 @@
 			let inputListCursor = inputList.length
 			let cacheText = ''
 			editor.addEventListener('keydown', function(e) {
-				console.log('keydown', e)
+				// console.log('keydown', e)
 				if(e.ctrlKey && e.keyCode === 13) { // ctrl + enter
 					form.script.value = quill.getText()
 					form.submit()
@@ -54,7 +54,7 @@
 					}
 					inputListCursor = Math.max(0, inputListCursor - 1)
 					const insert = inputList[inputListCursor]
-					quill.setContents([{ insert, attributes: { 'code-block': true } }])
+					quill.setContents([{ insert, attributes: { 'code-block': true } } ])
 				} else if (e.ctrlKey && e.keyCode === 40) { // ctrl + down
 					inputListCursor = Math.min(inputListCursor + 1, inputList.length)
 					const insert = inputListCursor === inputList.length ? cacheText : inputList[inputListCursor]

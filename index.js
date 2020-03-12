@@ -63,11 +63,11 @@ class Repl {
 
 	async input(script, wait = 0) {
 		// console.log('script' script)
-		this.readStream.push(script)
-		this.readStream.push('\n')
+		const content = `${script}\n`
+		this.readStream.push(content)
 		await sleep(wait)
 		const timestamp = Date.now()
-		this.logs.push({ type: 'input', timestamp, content: script })
+		this.logs.push({ type: 'input', timestamp, content })
 		this.fetchOutput(timestamp)
 	}
 
@@ -117,13 +117,13 @@ async function deleteRepl(ctx) {
 router.post('/:hash', async (ctx) => {
 	const { hash } = ctx.params
 	const theRepl = Repl.getInstance(hash)
-	const { script } = ctx.request.body
+	const script = String(ctx.request.body.script).trim()
 	console.log('run instance', hash, JSON.stringify(script))
-	if (script.trim() === '.exit') {
+	if (script === '.exit') {
 		await deleteRepl(ctx)
 		return
 	}
-	if (script.trim() === '.clear') {
+	if (script === '.clear') {
 		theRepl.clearLogs()
 	} else if (script) {
 		await theRepl.input(script)
