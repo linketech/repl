@@ -1,5 +1,9 @@
+/* eslint-disable import/no-dynamic-require, global-require */
 /* eslint-disable max-classes-per-file, no-underscore-dangle */
+const cp = require('child_process')
+const os = require('os')
 const fs = require('fs')
+const path = require('path')
 const repl = require('repl')
 const crypto = require('crypto')
 const { promisify } = require('util')
@@ -42,6 +46,15 @@ class ReplWriteStream extends Writable {
 	flush() { this.content = [] }
 }
 
+function resolve(name) {
+	try {
+		require.resolve(name)
+		return true
+	} catch (e) {
+		return false
+	}
+}
+
 class Repl {
 	static getInstance(hash) {
 		return Repl.instances[hash] || new Repl(hash)
@@ -55,10 +68,29 @@ class Repl {
 		console.log('new instance', hash)
 		this.readStream = new ReplReadStream()
 		this.writeStream = new ReplWriteStream()
-		repl.start({ prompt: '', input: this.readStream, output: this.writeStream, ignoreUndefined: true })
+		const r = repl.start({ prompt: '', input: this.readStream, output: this.writeStream, ignoreUndefined: true })
+		r.context.require = this.requireModule.bind(this)
+		r.context.require.resolve = require.resolve.bind(require)
 		this.hash = hash
 		Repl.instances[this.hash] = this
 		this.logs = []
+	}
+
+	requireModule(name) {
+		if (resolve(name)) {
+			return require(name)
+		}
+		const cwd = path.join(path.resolve(os.tmpdir()), this.hash)
+		if (!fs.existsSync(cwd)) {
+			fs.mkdirSync(cwd, { recursive: true })
+			cp.execSync('npm init -y', { cwd })
+		}
+		const fullPath = path.join(cwd, 'node_modules', name)
+		if (!resolve(fullPath)) {
+			const content = cp.execSync(`npm i --register=registry.npm.taobao.org ${name}`, { cwd })
+			this.logs.push({ type: 'output', timestamp: Date.now(), content })
+		}
+		return require(fullPath)
 	}
 
 	async input(script, wait = 0) {
