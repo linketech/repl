@@ -74,20 +74,32 @@ class Repl {
 		this.hash = hash
 		Repl.instances[this.hash] = this
 		this.logs = []
+		this.cwd = path.join(path.resolve(os.tmpdir()), this.hash)
+		this.reloadPackageJson()
 	}
 
-	requireModule(name) {
+	reloadPackageJson() {
+		try {
+			this.packageJson = JSON.parse(fs.readFileSync(path.join(this.cwd, 'package.json')))
+		} catch (e) {
+			this.packageJson = { name: this.hash }
+		}
+	}
+
+	requireModule(moduleName) {
+		const [name, version = 'latest'] = moduleName.split('@')
 		if (resolve(name)) {
 			return require(name)
 		}
-		const cwd = path.join(path.resolve(os.tmpdir()), this.hash)
+		const { cwd } = this
 		if (!fs.existsSync(cwd)) {
 			fs.mkdirSync(cwd, { recursive: true })
 			cp.execSync('npm init -y', { cwd })
 		}
 		const fullPath = path.join(cwd, 'node_modules', name)
 		if (!resolve(fullPath)) {
-			const content = cp.execSync(`npm i --register=registry.npm.taobao.org ${name}`, { cwd })
+			const content = cp.execSync(`npm i --register=registry.npm.taobao.org ${name}@${version}`, { cwd })
+			this.reloadPackageJson()
 			this.logs.push({ type: 'output', timestamp: Date.now(), content })
 		}
 		return require(fullPath)
@@ -133,7 +145,7 @@ router.get('/:hash', async (ctx) => {
 	const { hash } = ctx.params
 	const theRepl = Repl.getInstance(hash)
 	console.log('get instance', hash)
-	ctx.body = indexHtml({ logs: theRepl.getLogs() })
+	ctx.body = indexHtml({ repl: theRepl })
 })
 
 async function deleteRepl(ctx) {
@@ -142,7 +154,7 @@ async function deleteRepl(ctx) {
 	await theRepl.input('.exit')
 	console.log('delete instance', hash)
 	theRepl.clearLogs()
-	ctx.body = indexHtml({ logs: theRepl.getLogs() })
+	ctx.body = indexHtml({ repl: theRepl })
 	Repl.deleteInstance(hash)
 }
 
@@ -160,7 +172,7 @@ router.post('/:hash', async (ctx) => {
 	} else if (script) {
 		await theRepl.input(script)
 	}
-	ctx.body = indexHtml({ logs: theRepl.getLogs() })
+	ctx.body = indexHtml({ repl: theRepl })
 })
 
 

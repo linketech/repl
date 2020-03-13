@@ -39,12 +39,13 @@
 			const textarea = document.getElementById('script')
 			const editor = document.getElementById('editor')
 			const form = document.getElementById('form')
-			const inputList = <%=JSON.stringify(_.map(_.filter(logs, ({ type }) => type === 'input'), 'content'))%>
+			const inputList = <%=JSON.stringify(_.map(_.filter(repl.getLogs(), ({ type }) => type === 'input'), 'content'))%>
 			let inputListCursor = inputList.length
 			let cacheText = ''
 			editor.addEventListener('keydown', function(e) {
 				// console.log('keydown', e)
 				if(e.ctrlKey && e.keyCode === 13) { // ctrl + enter
+					quill.disable()
 					form.script.value = quill.getText()
 					form.submit()
 					e.preventDefault()
@@ -83,22 +84,67 @@
 </head>
 <body onload="onload()">
 	<div class="row" style="background-color: darkslateblue;">
-		<a href="#" class="btn btn-link" data-toggle="modal" data-target="#exampleModal">
+		<a href="#" class="btn btn-link" data-toggle="modal" data-target="#NodeModulesModal">
 			<svg class="bi bi-terminal" width="1.5em" height="1.5em" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 				<path fill-rule="evenodd" d="M16 4H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1V5a1 1 0 00-1-1zM4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4z" clip-rule="evenodd"></path>
 				<path fill-rule="evenodd" d="M8 11a.5.5 0 01.5-.5h3a.5.5 0 010 1h-3A.5.5 0 018 11zM5.146 6.146a.5.5 0 01.708 0l2 2a.5.5 0 010 .708l-2 2a.5.5 0 01-.708-.708L6.793 8.5 5.146 6.854a.5.5 0 010-.708z" clip-rule="evenodd"></path>
 			  </svg>
 		</a>
+		<!-- NodeModules Modal -->
+		<div class="modal fade" id="NodeModulesModal" tabindex="-1" role="dialog" aria-labelledby="NodeModulesModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="NodeModulesModalLabel">Node Modules of <%=repl.packageJson.name%></h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					</div>
+					<div class="modal-body">
+						<p><%=_.isEmpty(repl.packageJson.dependencies) ? 'No dependencies' : ''%></p>
+						<% _.forEach(repl.packageJson.dependencies, (v, k) => {%>
+							<p><%=[k, v].join('@')%></p>
+						<%})%>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+					</div>
+				</div>
+			</div>
+		</div>
 		<span style="margin: 8px auto; color: lightblue;">💻️ NodeJS REPL</span>
-		<a href="#" class="btn btn-link" data-toggle="modal" data-target="#exampleModal">
+		<a href="#" class="btn btn-link" data-toggle="modal" data-target="#helpModal">
 			<svg class="bi bi-question-square" width="1.5em" height="1.5em" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 				<path fill-rule="evenodd" d="M16 3H4a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1zM4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4z" clip-rule="evenodd"></path>
 				<path d="M7.25 8.033h1.32c0-.781.458-1.384 1.36-1.384.685 0 1.313.343 1.313 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.007.463h1.307v-.355c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.326 0-2.786.647-2.754 2.533zm1.562 5.516c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"></path>
 			</svg>
 		</a>
+		<!-- Help Modal -->
+		<div class="modal fade" id="helpModal" tabindex="-1" role="dialog" aria-labelledby="helpModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="helpModalLabel">Help</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					</div>
+					<div class="modal-body">
+						<p><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to submit the code. Submit empty to refresh the page.</p>
+						<p><kbd>Ctrl</kbd>+<kbd>Up/Down</kbd> to browse input history.</p>
+						<p>.clear: Clear the logs of the current session.</p>
+						<p>.exit: Remove and exit the current session.</p>
+						<p>require('pck@version'): Package will be automatically installed when requires.</p>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 	<form action="" method="POST" class="form" id="form" style="background-color: black; min-height: 100px;">
-		<% _.forEach(logs, ({ timestamp, content, type }) => {%>
+		<% _.forEach(repl.getLogs(), ({ timestamp, content, type }) => {%>
 			<div class="row">
 				<div class="col-1">
 					<pre style="margin: 5px"><div style="color: lightgrey; padding: .5em;" class="timestamp"><%=timestamp%></div></pre>
@@ -111,28 +157,5 @@
 		<textarea id="script" name="script" hidden></textarea>
 	</form>
 	<div id="editor"></div>
-
-	<!-- Modal -->
-	<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="exampleModalLabel">Help</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-				</div>
-				<div class="modal-body">
-					<p><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to submit the code. Submit empty to refresh the page.</p>
-					<p><kbd>Ctrl</kbd>+<kbd>Up/Down</kbd> to browse input history.</p>
-					<p>.clear: Clear the logs of the current session.</p>
-					<p>.exit: Remove and exit the current session.</p>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
-				</div>
-			</div>
-		</div>
-	</div>
 </body>
 </html>
