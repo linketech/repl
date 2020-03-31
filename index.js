@@ -9,15 +9,18 @@ const crypto = require('crypto')
 const { promisify } = require('util')
 const { Readable, Writable } = require('stream')
 
+const AdmZip = require('adm-zip')
 const _ = require('lodash')
 const Koa = require('koa')
 const Router = require('koa-router')
 const koaBody = require('koa-body')
 
 const indexHtml = _.template(fs.readFileSync('./template.html'))
-const sleep = promisify(setTimeout)
 const app = new Koa()
 const router = new Router()
+
+const sleep = promisify(setTimeout)
+cp.execAsync = promisify(cp.exec).bind(cp)
 
 class ReplReadStream extends Readable {
 	// eslint-disable-next-line class-methods-use-this
@@ -157,6 +160,33 @@ async function deleteRepl(ctx) {
 	Repl.deleteInstance(hash)
 }
 
+router.post('/:hash/npm/install', async (ctx) => {
+	const { hash } = ctx.params
+	const theRepl = Repl.getInstance(hash)
+	const { packageJson } = ctx.request.body
+	if (typeof packageJson !== 'object') {
+		ctx.status = 400
+		return
+	}
+	console.log('npm install for', hash, JSON.stringify(packageJson))
+	const { cwd } = theRepl
+	if (!fs.existsSync(cwd)) {
+		fs.mkdirSync(cwd, { recursive: true })
+		fs.writeFileSync(path.join(cwd, 'package.json'), JSON.stringify(packageJson, null, 4))
+	}
+	const { stderr, stdout } = await cp.execAsync('npm i --production --register=registry.npm.taobao.org', { cwd })
+	if (stderr) {
+		theRepl.logs.push({ type: 'output', timestamp: Date.now(), content: stderr })
+	}
+	if (stdout) {
+		theRepl.logs.push({ type: 'output', timestamp: Date.now(), content: stdout })
+	}
+	theRepl.reloadPackageJson()
+	const zip = new AdmZip()
+	zip.addLocalFolder(path.join(cwd))
+	ctx.body = zip.toBuffer()
+})
+
 router.post('/:hash', async (ctx) => {
 	const { hash } = ctx.params
 	const theRepl = Repl.getInstance(hash)
@@ -174,7 +204,6 @@ router.post('/:hash', async (ctx) => {
 	}
 	ctx.body = indexHtml({ repl: theRepl })
 })
-
 
 router.delete('/:hash', deleteRepl)
 

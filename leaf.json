@@ -1,4 +1,9 @@
 {
 	"name": "repl",
-	"static": ["static"]
+	"static": ["static"],
+	"vpc": {
+		"VpcId": "vpc-m5etkh1xepf1p5he73efc",
+		"VSwitchIds": ["vsw-m5evqa01dujw41ybpdwrf"],
+		"SecurityGroupId": "sg-m5egjin2ub5c4qouaiei"
+	}
 }
