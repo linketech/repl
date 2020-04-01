@@ -21,6 +21,7 @@ const router = new Router()
 
 const sleep = promisify(setTimeout)
 cp.execAsync = promisify(cp.exec).bind(cp)
+const Installer = path.join(__dirname, fs.existsSync('node_modules') ? 'node_modules' : '../node_modules', '.bin', 'yarn')
 
 class ReplReadStream extends Readable {
 	// eslint-disable-next-line class-methods-use-this
@@ -101,7 +102,7 @@ class Repl {
 		}
 		const fullPath = path.join(cwd, 'node_modules', name)
 		if (!resolve(fullPath)) {
-			const content = cp.execSync(`npm i --register=registry.npm.taobao.org ${name}@${version}`, { cwd })
+			const content = cp.execSync(`${Installer} add --registry https://registry.npm.taobao.org ${name}@${version}`, { cwd })
 			this.reloadPackageJson()
 			this.logs.push({ type: 'output', timestamp: Date.now(), content })
 		}
@@ -172,9 +173,9 @@ router.post('/:hash/npm/install', async (ctx) => {
 	const { cwd } = theRepl
 	if (!fs.existsSync(cwd)) {
 		fs.mkdirSync(cwd, { recursive: true })
-		fs.writeFileSync(path.join(cwd, 'package.json'), JSON.stringify(packageJson, null, 4))
 	}
-	const { stderr, stdout } = await cp.execAsync('npm i --production --register=registry.npm.taobao.org', { cwd })
+	fs.writeFileSync(path.join(cwd, 'package.json'), JSON.stringify(packageJson, null, 4))
+	const { stderr, stdout } = await cp.execAsync(`${Installer} install --production --registry https://registry.npm.taobao.org`, { cwd })
 	if (stderr) {
 		theRepl.logs.push({ type: 'output', timestamp: Date.now(), content: stderr })
 	}
