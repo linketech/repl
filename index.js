@@ -191,7 +191,7 @@ router.post('/:hash/npm/install', async (ctx) => {
 router.post('/:hash', async (ctx) => {
 	const { hash } = ctx.params
 	const theRepl = Repl.getInstance(hash)
-	const { logScript } = ctx.request.body
+	const { logScript, wait } = ctx.request.body
 	const script = String(ctx.request.body.script).trim()
 	console.log('run instance', hash, JSON.stringify(script))
 	if (script === '.exit') {
@@ -201,7 +201,7 @@ router.post('/:hash', async (ctx) => {
 	if (script === '.clear') {
 		theRepl.clearLogs()
 	} else if (script) {
-		await theRepl.input(script, logScript)
+		await theRepl.input(script, logScript, Number(wait))
 	}
 	ctx.body = indexHtml({ repl: theRepl })
 })

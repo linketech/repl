@@ -48,12 +48,15 @@
 					quill.disable()
 					form.script.value = quill.getText()
 					form.logScript.value = ''
+					form.wait.value = '0'
 					form.submit()
 					e.preventDefault()
 				} else if(e.altKey && e.keyCode === 13) { // shift + enter
 					quill.disable()
 					form.logScript.value = quill.getText().trim()
-					form.script.value = 'console.log(child_process.execSync(' + JSON.stringify(form.logScript.value) + ').toString())'
+					form.wait.value = '50'
+					const callback = '(err, stdout, stderr) => { if (err) { throw err } else { if (stderr) console.log(String(stderr)); if (stdout) console.log(String(stdout)) }}'
+					form.script.value = 'child_process.exec(' + JSON.stringify(form.logScript.value) + ', ' + callback + '), undefined'
 					form.submit()
 					e.preventDefault()
 				} else if (e.ctrlKey && e.keyCode === 38) { // ctrl + up
@@ -164,6 +167,7 @@
 		<%})%>
 		<textarea id="script" name="script" hidden></textarea>
 		<input type="text" name="logScript" hidden />
+		<input type="text" name="wait" hidden />
 	</form>
 	<div id="editor"></div>
 </body>

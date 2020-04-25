@@ -7,6 +7,7 @@
 		"SecurityGroupId": "sg-m5egjin2ub5c4qouaiei"
 	},
 	"serverless": {
-		"memory": 1024
+		"memory": 1024,
+		"timeout": 180
 	}
 }
