@@ -51,12 +51,12 @@
 					form.wait.value = '0'
 					form.submit()
 					e.preventDefault()
-				} else if(e.altKey && e.keyCode === 13) { // shift + enter
+				} else if(e.altKey && e.keyCode === 13) { // alt + enter
 					quill.disable()
 					form.logScript.value = quill.getText().trim()
 					form.wait.value = '50'
 					const callback = '(err, stdout, stderr) => { if (err) { throw err } else { if (stderr) console.log(String(stderr)); if (stdout) console.log(String(stdout)) }}'
-					form.script.value = 'child_process.exec(' + JSON.stringify(form.logScript.value) + ', ' + callback + '), undefined'
+					form.script.value = form.logScript.value ? 'child_process.exec(' + JSON.stringify(form.logScript.value) + ', ' + callback + '), undefined' : ''
 					form.submit()
 					e.preventDefault()
 				} else if (e.ctrlKey && e.keyCode === 38) { // ctrl + up
