@@ -9,6 +9,7 @@ const crypto = require('crypto')
 const { promisify } = require('util')
 const { Readable, Writable } = require('stream')
 
+const parsePkg = require('parse-package-name')
 const AdmZip = require('adm-zip')
 const _ = require('lodash')
 const Koa = require('koa')
@@ -91,7 +92,7 @@ class Repl {
 	}
 
 	requireModule(moduleName) {
-		const [name, version = 'latest'] = moduleName.split('@')
+		const { name, path: pkgPath, version } = parsePkg(moduleName)
 		if (resolve(name)) {
 			return require(name)
 		}
@@ -100,9 +101,9 @@ class Repl {
 			fs.mkdirSync(cwd, { recursive: true })
 			cp.execSync('npm init -y', { cwd })
 		}
-		const fullPath = path.join(cwd, 'node_modules', name)
+		const fullPath = path.join(cwd, 'node_modules', name, pkgPath)
 		if (!resolve(fullPath)) {
-			const content = cp.execSync(`${Installer} add --registry https://registry.npm.taobao.org ${name}@${version}`, { cwd })
+			const content = cp.execSync(`${Installer} add --registry https://registry.npm.taobao.org ${name}@${version || 'latest'}`, { cwd })
 			this.reloadPackageJson()
 			this.logs.push({ type: 'output', timestamp: Date.now(), content })
 		}
