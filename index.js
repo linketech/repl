@@ -103,7 +103,7 @@ class Repl {
 		}
 		const fullPath = path.join(cwd, 'node_modules', name, pkgPath)
 		if (!resolve(fullPath)) {
-			const content = cp.execSync(`${Installer} add --registry https://registry.npm.taobao.org ${name}@${version || 'latest'}`, { cwd })
+			const content = cp.execSync(`${Installer} add --registry https://registry.npmmirror.com/ ${name}@${version || 'latest'}`, { cwd })
 			this.reloadPackageJson()
 			this.logs.push({ type: 'output', timestamp: Date.now(), content })
 		}
@@ -176,7 +176,7 @@ router.post('/:hash/npm/install', async (ctx) => {
 		fs.mkdirSync(cwd, { recursive: true })
 	}
 	fs.writeFileSync(path.join(cwd, 'package.json'), JSON.stringify(packageJson, null, 4))
-	const { stderr, stdout } = await cp.execAsync(`${Installer} install --production --registry https://registry.npm.taobao.org`, { cwd })
+	const { stderr, stdout } = await cp.execAsync(`${Installer} install --production --registry https://registry.npmmirror.com/`, { cwd })
 	if (stderr) {
 		theRepl.logs.push({ type: 'output', timestamp: Date.now(), content: stderr })
 	}
